@@ -2,6 +2,7 @@
 
 use App\Http\Controllers\Admin\ToolController;
 use App\Http\Controllers\Auth\LoginController;
+use App\Http\Controllers\ProfileController;
 use Illuminate\Support\Facades\Route;
 
 // Guest routes
@@ -13,10 +14,21 @@ Route::middleware('guest')->group(function () {
 // Authenticated routes
 Route::post('/logout', [LoginController::class, 'logout'])->middleware('auth')->name('logout');
 
+// Profile routes
+Route::middleware('auth')->prefix('profile')->name('profile.')->group(function () {
+    Route::get('/edit', [ProfileController::class, 'edit'])->name('edit');
+    Route::put('/update', [ProfileController::class, 'update'])->name('update');
+    Route::get('/password/edit', [ProfileController::class, 'editPassword'])->name('password.edit');
+    Route::put('/password/update', [ProfileController::class, 'updatePassword'])->name('password.update');
+});
+
 // Admin routes
 Route::middleware(['auth', 'role:admin'])->prefix('admin')->name('admin.')->group(function () {
     Route::get('/dashboard', [App\Http\Controllers\Admin\DashboardController::class, 'index'])->name('dashboard');
-    
+
+    // Category management
+    Route::resource('categories', App\Http\Controllers\Admin\CategoryController::class)->except(['show']);
+
     // Tool management
     Route::resource('tools', ToolController::class);
     
@@ -34,9 +46,7 @@ Route::middleware(['auth', 'role:admin'])->prefix('admin')->name('admin.')->grou
 
 // Guru routes
 Route::middleware(['auth', 'role:guru'])->prefix('guru')->name('guru.')->group(function () {
-    Route::get('/dashboard', function () {
-        return view('guru.dashboard');
-    })->name('dashboard');
+    Route::get('/dashboard', [App\Http\Controllers\Guru\BorrowingController::class, 'dashboard'])->name('dashboard');
     
     // Borrowing routes
     Route::resource('borrowings', App\Http\Controllers\Guru\BorrowingController::class);

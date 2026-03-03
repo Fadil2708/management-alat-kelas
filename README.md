@@ -106,6 +106,6 @@ php artisan optimize        # Create optimized cache
 
 ---
 
-## License
+##  License
 
 MIT License

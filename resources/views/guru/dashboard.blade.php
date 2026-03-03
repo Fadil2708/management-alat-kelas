@@ -72,7 +72,7 @@
             </div>
             <div>
                 <p class="text-gray-500 text-sm font-medium">Total Requests</p>
-                <p class="text-4xl font-bold text-gray-800 mt-1">{{ auth()->user()->borrowings->count() }}</p>
+                <p class="text-4xl font-bold text-gray-800 mt-1">{{ $stats['total'] }}</p>
             </div>
             <div class="mt-4 pt-4 border-t border-gray-100">
                 <div class="flex items-center text-xs text-gray-500">
@@ -93,7 +93,7 @@
             </div>
             <div>
                 <p class="text-gray-500 text-sm font-medium">Pending</p>
-                <p class="text-4xl font-bold text-yellow-600 mt-1">{{ auth()->user()->borrowings()->where('status', 'pending')->count() }}</p>
+                <p class="text-4xl font-bold text-yellow-600 mt-1">{{ $stats['pending'] }}</p>
             </div>
             <div class="mt-4 pt-4 border-t border-gray-100">
                 <div class="flex items-center text-xs text-gray-500">
@@ -114,7 +114,7 @@
             </div>
             <div>
                 <p class="text-gray-500 text-sm font-medium">Completed</p>
-                <p class="text-4xl font-bold text-green-600 mt-1">{{ auth()->user()->borrowings()->where('status', 'returned')->count() }}</p>
+                <p class="text-4xl font-bold text-green-600 mt-1">{{ $stats['returned'] }}</p>
             </div>
             <div class="mt-4 pt-4 border-t border-gray-100">
                 <div class="flex items-center text-xs text-gray-500">
@@ -146,9 +146,9 @@
                 </div>
             </div>
             <div class="p-6">
-                @if(auth()->user()->borrowings()->latest()->take(5)->count() > 0)
+                @if($borrowings->count() > 0)
                     <div class="space-y-3">
-                        @foreach(auth()->user()->borrowings()->latest()->take(5)->get() as $borrowing)
+                        @foreach($borrowings->take(5) as $borrowing)
                         <div class="flex items-center justify-between p-4 bg-gradient-to-r from-gray-50 to-gray-100 rounded-xl hover:from-gray-100 hover:to-gray-150 transition-all cursor-pointer group" onclick="window.location='{{ route('guru.borrowings.show', $borrowing) }}'">
                             <div class="flex items-center gap-4">
                                 <div class="w-12 h-12 bg-white rounded-xl flex items-center justify-center shadow-md group-hover:shadow-lg transition-shadow">
@@ -252,9 +252,10 @@
                     </h3>
                 </div>
                 <div class="p-6">
-                    @if(auth()->user()->borrowings()->where('status', 'pending')->count() > 0)
+                    @php $pendingBorrowings = $borrowings->where('status', 'pending'); @endphp
+                    @if($pendingBorrowings->count() > 0)
                         <div class="space-y-3">
-                            @foreach(auth()->user()->borrowings()->where('status', 'pending')->get() as $borrowing)
+                            @foreach($pendingBorrowings as $borrowing)
                             <div class="p-4 bg-gradient-to-r from-yellow-50 to-amber-50 border border-yellow-200 rounded-xl">
                                 <div class="flex items-center justify-between mb-2">
                                     <p class="font-semibold text-gray-900 text-sm">{{ $borrowing->tool->name }}</p>

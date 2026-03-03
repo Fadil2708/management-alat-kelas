@@ -29,10 +29,33 @@ class BorrowingController extends Controller
             $query->where('date', '<=', $request->date_to);
         }
 
+        // Overdue filter
+        if ($request->filled('overdue')) {
+            $query->whereIn('status', ['approved', 'borrowed']);
+        }
+
         $borrowings = $query->latest()->paginate(15)->withQueryString();
         $users = \App\Models\User::where('role', 'guru')->get();
+        
+        // Consolidated stats in single query
+        $statusCounts = Borrowing::selectRaw('status, COUNT(*) as count')
+            ->groupBy('status')
+            ->pluck('count', 'status');
+        
+        // Overdue count
+        $overdueCount = Borrowing::whereIn('status', ['approved', 'borrowed'])
+            ->where('date', '<', now()->subDays(\App\Models\Setting::get('borrowing.max_duration', 7)))
+            ->count();
 
-        return view('admin.borrowings.index', compact('borrowings', 'users'));
+        $stats = [
+            'pending' => $statusCounts['pending'] ?? 0,
+            'approved' => $statusCounts['approved'] ?? 0,
+            'returned' => $statusCounts['returned'] ?? 0,
+            'rejected' => $statusCounts['rejected'] ?? 0,
+            'overdue' => $overdueCount,
+        ];
+
+        return view('admin.borrowings.index', compact('borrowings', 'users', 'stats'));
     }
 
     public function show(Borrowing $borrowing)

@@ -78,7 +78,7 @@
 @section('content')
 <div class="animate-fade-in">
     <!-- Stats Overview -->
-    <div class="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
+    <div class="grid grid-cols-2 md:grid-cols-5 gap-4 mb-6">
         <div class="bg-white rounded-xl shadow-lg p-4 border border-gray-100">
             <div class="flex items-center gap-3">
                 <div class="w-10 h-10 bg-yellow-100 rounded-lg flex items-center justify-center">
@@ -88,7 +88,7 @@
                 </div>
                 <div>
                     <p class="text-xs text-gray-500 font-medium">Pending</p>
-                    <p class="text-xl font-bold text-yellow-600">{{ \App\Models\Borrowing::where('status', 'pending')->count() }}</p>
+                    <p class="text-xl font-bold text-yellow-600">{{ $stats['pending'] }}</p>
                 </div>
             </div>
         </div>
@@ -101,7 +101,7 @@
                 </div>
                 <div>
                     <p class="text-xs text-gray-500 font-medium">Approved</p>
-                    <p class="text-xl font-bold text-blue-600">{{ \App\Models\Borrowing::where('status', 'approved')->count() }}</p>
+                    <p class="text-xl font-bold text-blue-600">{{ $stats['approved'] }}</p>
                 </div>
             </div>
         </div>
@@ -114,7 +114,7 @@
                 </div>
                 <div>
                     <p class="text-xs text-gray-500 font-medium">Returned</p>
-                    <p class="text-xl font-bold text-green-600">{{ \App\Models\Borrowing::where('status', 'returned')->count() }}</p>
+                    <p class="text-xl font-bold text-green-600">{{ $stats['returned'] }}</p>
                 </div>
             </div>
         </div>
@@ -127,7 +127,20 @@
                 </div>
                 <div>
                     <p class="text-xs text-gray-500 font-medium">Rejected</p>
-                    <p class="text-xl font-bold text-red-600">{{ \App\Models\Borrowing::where('status', 'rejected')->count() }}</p>
+                    <p class="text-xl font-bold text-red-600">{{ $stats['rejected'] }}</p>
+                </div>
+            </div>
+        </div>
+        <div class="bg-white rounded-xl shadow-lg p-4 border-2 border-red-200">
+            <div class="flex items-center gap-3">
+                <div class="w-10 h-10 bg-red-500 rounded-lg flex items-center justify-center animate-pulse">
+                    <svg class="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"></path>
+                    </svg>
+                </div>
+                <div>
+                    <p class="text-xs text-gray-500 font-medium">Overdue</p>
+                    <p class="text-xl font-bold text-red-600">{{ $stats['overdue'] }}</p>
                 </div>
             </div>
         </div>
@@ -153,6 +166,18 @@
                     @foreach($users as $user)
                     <option value="{{ $user->id }}" {{ request('user_id') == $user->id ? 'selected' : '' }}>{{ $user->name }}</option>
                     @endforeach
+                </select>
+            </div>
+            <div>
+                <label class="block text-sm font-semibold text-gray-700 mb-2">
+                    <svg class="w-4 h-4 inline-block mr-1 text-red-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                    </svg>
+                    Overdue Only
+                </label>
+                <select name="overdue" class="w-full px-4 py-2.5 border border-gray-200 rounded-xl focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-all">
+                    <option value="">All Borrowings</option>
+                    <option value="1" {{ request('overdue') == '1' ? 'selected' : '' }}>Overdue Only</option>
                 </select>
             </div>
             <div>
@@ -233,18 +258,29 @@
                             {{ $borrowing->purpose }}
                         </td>
                         <td class="px-6 py-4 whitespace-nowrap">
-                            <span class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-semibold
-                                @if($borrowing->status === 'returned') bg-green-100 text-green-700
-                                @elseif($borrowing->status === 'approved') bg-blue-100 text-blue-700
-                                @elseif($borrowing->status === 'rejected') bg-red-100 text-red-700
-                                @else bg-yellow-100 text-yellow-700 @endif">
-                                <span class="w-2 h-2 rounded-full animate-pulse
-                                    @if($borrowing->status === 'returned') bg-green-500
-                                    @elseif($borrowing->status === 'approved') bg-blue-500
-                                    @elseif($borrowing->status === 'rejected') bg-red-500
-                                    @else bg-yellow-500 @endif"></span>
-                                {{ ucfirst($borrowing->status) }}
-                            </span>
+                            @php $isOverdue = $borrowing->isOverdue(); @endphp
+                            <div class="flex items-center gap-2">
+                                <span class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-semibold
+                                    @if($borrowing->status === 'returned') bg-green-100 text-green-700
+                                    @elseif($borrowing->status === 'approved') bg-blue-100 text-blue-700
+                                    @elseif($borrowing->status === 'rejected') bg-red-100 text-red-700
+                                    @else bg-yellow-100 text-yellow-700 @endif">
+                                    <span class="w-2 h-2 rounded-full animate-pulse
+                                        @if($borrowing->status === 'returned') bg-green-500
+                                        @elseif($borrowing->status === 'approved') bg-blue-500
+                                        @elseif($borrowing->status === 'rejected') bg-red-500
+                                        @else bg-yellow-500 @endif"></span>
+                                    {{ ucfirst($borrowing->status) }}
+                                </span>
+                                @if($isOverdue)
+                                    <span class="inline-flex items-center gap-1 px-2 py-1 rounded-md text-xs font-bold bg-red-500 text-white" title="Overdue by {{ $borrowing->getOverdueDays() }} days">
+                                        <svg class="w-3 h-3" fill="currentColor" viewBox="0 0 20 20">
+                                            <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clip-rule="evenodd"></path>
+                                        </svg>
+                                        {{ $borrowing->getOverdueDays() }}d
+                                    </span>
+                                @endif
+                            </div>
                         </td>
                         <td class="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
                             <a href="{{ route('admin.borrowings.show', $borrowing) }}"

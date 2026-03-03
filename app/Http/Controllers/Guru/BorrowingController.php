@@ -12,6 +12,26 @@ use Illuminate\Support\Facades\DB;
 class BorrowingController extends Controller
 {
     /**
+     * Display guru dashboard.
+     */
+    public function dashboard()
+    {
+        $user = Auth::user()->load(['borrowings' => function($q) {
+            $q->with('tool')->latest();
+        }]);
+
+        $borrowings = $user->borrowings;
+        
+        $stats = [
+            'total' => $borrowings->count(),
+            'pending' => $borrowings->where('status', 'pending')->count(),
+            'returned' => $borrowings->where('status', 'returned')->count(),
+        ];
+
+        return view('guru.dashboard', compact('user', 'borrowings', 'stats'));
+    }
+
+    /**
      * Display a listing of the resource.
      */
     public function index()

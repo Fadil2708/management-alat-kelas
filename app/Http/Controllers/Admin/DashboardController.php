@@ -22,8 +22,11 @@ class DashboardController extends Controller
             ->take(5)
             ->get();
 
-        // Monthly borrowing data for chart (SQLite compatible)
-        $monthlyData = Borrowing::selectRaw("strftime('%Y-%m', date) as month, COUNT(*) as count")
+        // Monthly borrowing data for chart (database-agnostic)
+        $driver = DB::connection()->getDriverName();
+        $dateFormat = $driver === 'sqlite' ? "strftime('%Y-%m', date)" : "DATE_FORMAT(date, '%Y-%m')";
+        
+        $monthlyData = Borrowing::selectRaw("$dateFormat as month, COUNT(*) as count")
             ->where('date', '>=', now()->subMonths(6))
             ->groupBy('month')
             ->orderBy('month')

@@ -24,7 +24,7 @@
             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-6 9l2 2 4-4"></path>
         </svg>
         <span class="font-medium">Borrowings</span>
-        @php $pendingCount = \App\Models\Borrowing::where('status', 'pending')->count(); @endphp
+        @php $pendingCount = $sidebarPendingCount ?? 0; @endphp
         @if($pendingCount > 0)
             <span class="ml-auto bg-red-500 text-white text-xs font-bold px-2 py-0.5 rounded-full">{{ $pendingCount }}</span>
         @endif
@@ -123,22 +123,22 @@
 
                 <!-- Category -->
                 <div>
-                    <label for="category" class="block text-sm font-semibold text-gray-700 mb-2">
+                    <label for="category_id" class="block text-sm font-semibold text-gray-700 mb-2">
                         <svg class="w-4 h-4 inline-block mr-1 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 7h.01M7 3h5c.512 0 1.024.195 1.414.586l7 7a2 2 0 010 2.828l-7 7a2 2 0 01-2.828 0l-7-7A1.994 1.994 0 013 12V7a4 4 0 014-4z"></path>
                         </svg>
-                        Category <span class="text-red-500">*</span>
+                        Category
                     </label>
-                    <select id="category" name="category"
-                            class="w-full px-4 py-3 border border-gray-200 rounded-xl focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-all @error('category') border-red-400 @enderror"
-                            required>
+                    <select id="category_id" name="category_id"
+                            class="w-full px-4 py-3 border border-gray-200 rounded-xl focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-all @error('category_id') border-red-400 @enderror">
                         <option value="">Select Category</option>
-                        <option value="Electronics" {{ old('category', $tool->category) == 'Electronics' ? 'selected' : '' }}>📱 Electronics</option>
-                        <option value="Audio" {{ old('category', $tool->category) == 'Audio' ? 'selected' : '' }}>🔊 Audio</option>
-                        <option value="Display" {{ old('category', $tool->category) == 'Display' ? 'selected' : '' }}>📺 Display</option>
-                        <option value="Other" {{ old('category', $tool->category) == 'Other' ? 'selected' : '' }}>📦 Other</option>
+                        @foreach($categories as $cat)
+                            <option value="{{ $cat->id }}" {{ old('category_id', $tool->category_id) == $cat->id ? 'selected' : '' }}>
+                                {{ $cat->name }}
+                            </option>
+                        @endforeach
                     </select>
-                    @error('category')
+                    @error('category_id')
                         <p class="text-red-500 text-xs mt-1 flex items-center gap-1">
                             <svg class="w-3 h-3" fill="currentColor" viewBox="0 0 20 20">
                                 <path fill-rule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7 4a1 1 0 11-2 0 1 1 0 012 0zm-1-9a1 1 0 00-1 1v4a1 1 0 102 0V6a1 1 0 00-1-1z" clip-rule="evenodd"></path>

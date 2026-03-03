@@ -24,7 +24,7 @@
             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-6 9l2 2 4-4"></path>
         </svg>
         <span class="font-medium">Borrowings</span>
-        @php $pendingCount = \App\Models\Borrowing::where('status', 'pending')->count(); @endphp
+        @php $pendingCount = $sidebarPendingCount ?? 0; @endphp
         @if($pendingCount > 0)
             <span class="ml-auto bg-red-500 text-white text-xs font-bold px-2 py-0.5 rounded-full">{{ $pendingCount }}</span>
         @endif
@@ -113,12 +113,13 @@
                     </svg>
                     Category
                 </label>
-                <select name="category" class="w-full px-4 py-2.5 border border-gray-200 rounded-xl focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-all">
+                <select name="category_id" class="w-full px-4 py-2.5 border border-gray-200 rounded-xl focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-all">
                     <option value="">All Categories</option>
-                    <option value="Electronics" {{ request('category') == 'Electronics' ? 'selected' : '' }}>Electronics</option>
-                    <option value="Audio" {{ request('category') == 'Audio' ? 'selected' : '' }}>Audio</option>
-                    <option value="Display" {{ request('category') == 'Display' ? 'selected' : '' }}>Display</option>
-                    <option value="Other" {{ request('category') == 'Other' ? 'selected' : '' }}>Other</option>
+                    @foreach($categories as $cat)
+                        <option value="{{ $cat->id }}" {{ request('category_id') == $cat->id ? 'selected' : '' }}>
+                            {{ $cat->name }}
+                        </option>
+                    @endforeach
                 </select>
             </div>
             <div>
@@ -184,9 +185,16 @@
                             </div>
                         </td>
                         <td class="px-6 py-4 whitespace-nowrap">
-                            <span class="inline-flex items-center px-3 py-1 rounded-full text-xs font-semibold bg-gray-100 text-gray-700">
-                                {{ $tool->category }}
-                            </span>
+                            @if($tool->category)
+                                <span class="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-semibold" style="background: {{ $tool->category->color }}20; color: {{ $tool->category->color }};">
+                                    <span class="w-2 h-2 rounded-full" style="background: {{ $tool->category->color }};"></span>
+                                    {{ $tool->category->name }}
+                                </span>
+                            @else
+                                <span class="inline-flex items-center px-3 py-1 rounded-full text-xs font-semibold bg-gray-100 text-gray-700">
+                                    Uncategorised
+                                </span>
+                            @endif
                         </td>
                         <td class="px-6 py-4 whitespace-nowrap">
                             <code class="text-xs font-mono bg-gray-100 px-2 py-1 rounded text-gray-600">{{ $tool->inventory_code }}</code>
@@ -231,16 +239,17 @@
                                     </svg>
                                     Edit
                                 </a>
-                                <form action="{{ route('admin.tools.destroy', $tool) }}" method="POST" class="inline"
-                                      onsubmit="return confirm('Are you sure you want to delete this tool?');">
+                                <button type="button"
+                                   onclick="confirmDelete({{ $tool->id }})"
+                                   class="inline-flex items-center gap-1 text-red-600 hover:text-red-800 hover:bg-red-50 px-3 py-1.5 rounded-lg transition-all">
+                                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path>
+                                    </svg>
+                                    Delete
+                                </button>
+                                <form id="delete-form-{{ $tool->id }}" action="{{ route('admin.tools.destroy', $tool) }}" method="POST" class="hidden">
                                     @csrf
                                     @method('DELETE')
-                                    <button type="submit" class="inline-flex items-center gap-1 text-red-600 hover:text-red-800 hover:bg-red-50 px-3 py-1.5 rounded-lg transition-all">
-                                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path>
-                                        </svg>
-                                        Delete
-                                    </button>
                                 </form>
                             </div>
                         </td>
@@ -278,6 +287,53 @@
     </div>
     @endif
 </div>
+
+@push('scripts')
+<script>
+function confirmDelete(toolId) {
+    Swal.fire({
+        title: 'Delete Tool?',
+        html: `
+            <div class="text-center">
+                <div class="w-20 h-20 bg-red-100 rounded-full flex items-center justify-center mx-auto mb-4">
+                    <svg class="w-10 h-10 text-red-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path>
+                    </svg>
+                </div>
+                <p class="text-gray-700 text-lg font-semibold mb-2">Are you sure you want to delete this tool?</p>
+                <p class="text-gray-500 text-sm">This action cannot be undone and will permanently remove the tool from inventory.</p>
+            </div>
+        `,
+        icon: 'warning',
+        iconHtml: null,
+        showCancelButton: true,
+        confirmButtonColor: '#ef4444',
+        cancelButtonColor: '#6b7280',
+        confirmButtonText: 'Yes, Delete It!',
+        cancelButtonText: 'Cancel',
+        reverseButtons: true,
+        showClass: {
+            popup: 'animate__animated animate__zoomIn'
+        },
+        hideClass: {
+            popup: 'animate__animated animate__zoomOut'
+        },
+        customClass: {
+            popup: 'rounded-2xl',
+            title: 'text-2xl font-bold text-gray-800',
+            content: 'text-base text-gray-600',
+            confirmButton: 'px-6 py-2.5 rounded-xl font-semibold transition-all transform hover:scale-105',
+            cancelButton: 'px-6 py-2.5 rounded-xl font-semibold transition-all'
+        },
+        buttonsStyling: false
+    }).then((result) => {
+        if (result.isConfirmed) {
+            document.getElementById('delete-form-' + toolId).submit();
+        }
+    });
+}
+</script>
+@endpush
 
 <style>
 @keyframes fade-in {

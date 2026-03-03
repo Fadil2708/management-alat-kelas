@@ -71,7 +71,7 @@
         }
     </style>
 </head>
-<body class="gradient-bg min-h-screen flex items-center justify-center p-4 relative overflow-hidden">
+<body class="gradient-bg min-h-screen flex items-center justify-center p-4 relative overflow-auto">
     <!-- Animated Background Shapes -->
     <div class="absolute inset-0 overflow-hidden">
         <div class="absolute top-20 left-10 w-72 h-72 bg-white/10 rounded-full blur-3xl floating"></div>

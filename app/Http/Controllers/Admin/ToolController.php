@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
+use App\Models\Category;
 use App\Models\Tool;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Storage;
@@ -14,13 +15,15 @@ class ToolController extends Controller
      */
     public function index(Request $request)
     {
-        $query = Tool::query();
+        $query = Tool::with('category');
 
         if ($request->filled('search')) {
             $query->where(function ($q) use ($request) {
                 $q->where('name', 'like', '%' . $request->search . '%')
                     ->orWhere('inventory_code', 'like', '%' . $request->search . '%')
-                    ->orWhere('category', 'like', '%' . $request->search . '%');
+                    ->orWhereHas('category', function ($q) use ($request) {
+                        $q->where('name', 'like', '%' . $request->search . '%');
+                    });
             });
         }
 
@@ -28,13 +31,14 @@ class ToolController extends Controller
             $query->where('status', $request->status);
         }
 
-        if ($request->filled('category')) {
-            $query->where('category', $request->category);
+        if ($request->filled('category_id')) {
+            $query->where('category_id', $request->category_id);
         }
 
         $tools = $query->latest()->paginate(10)->withQueryString();
+        $categories = Category::all();
 
-        return view('admin.tools.index', compact('tools'));
+        return view('admin.tools.index', compact('tools', 'categories'));
     }
 
     /**
@@ -42,7 +46,8 @@ class ToolController extends Controller
      */
     public function create()
     {
-        return view('admin.tools.create');
+        $categories = Category::orderBy('name')->get();
+        return view('admin.tools.create', compact('categories'));
     }
 
     /**
@@ -52,7 +57,7 @@ class ToolController extends Controller
     {
         $validated = $request->validate([
             'name' => ['required', 'string', 'max:255'],
-            'category' => ['required', 'string', 'max:255'],
+            'category_id' => ['nullable', 'exists:categories,id'],
             'inventory_code' => ['required', 'string', 'unique:tools,inventory_code'],
             'condition' => ['required', 'in:good,fair,poor'],
             'location' => ['required', 'string', 'max:255'],
@@ -82,7 +87,8 @@ class ToolController extends Controller
      */
     public function edit(Tool $tool)
     {
-        return view('admin.tools.edit', compact('tool'));
+        $categories = Category::orderBy('name')->get();
+        return view('admin.tools.edit', compact('tool', 'categories'));
     }
 
     /**
@@ -92,7 +98,7 @@ class ToolController extends Controller
     {
         $validated = $request->validate([
             'name' => ['required', 'string', 'max:255'],
-            'category' => ['required', 'string', 'max:255'],
+            'category_id' => ['nullable', 'exists:categories,id'],
             'inventory_code' => ['required', 'string', 'unique:tools,inventory_code,' . $tool->id],
             'condition' => ['required', 'in:good,fair,poor'],
             'location' => ['required', 'string', 'max:255'],
